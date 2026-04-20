@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚀 Mi Sitio Web</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Jenkins CI/CD</p>
+      <h1>🚀 Mi Sitio Web</h1>
+      <p class="subtitle">Desplegado automáticamente con Jenkins a S3</p>
+    </section>
+
+    <section class="deploy-flow" aria-labelledby="deploy-title">
+      <h2 id="deploy-title">Flujo de deploy</h2>
+      <div class="steps" aria-label="Pasos del deploy">
+        <span>git push</span>
+        <strong>→</strong>
+        <span>Jenkins</span>
+        <strong>→</strong>
+        <span>tests</span>
+        <strong>→</strong>
+        <span>S3</span>
+      </div>
+      <p>
+        Cada cambio enviado al repositorio dispara el pipeline, valida el sitio
+        con pruebas automatizadas y publica los archivos estaticos en AWS S3.
+      </p>
+    </section>
+
+    <section class="stats" aria-labelledby="stats-title">
+      <h2 id="stats-title">Stats del pipeline</h2>
+      <div class="stats-grid">
+        <article class="card">
+          <span class="card-label">Deploys</span>
+          <strong id="contador-deploys">0</strong>
+        </article>
+        <article class="card">
+          <span class="card-label">Hora actual</span>
+          <strong id="hora-actual">--:--:--</strong>
+        </article>
+        <article class="card">
+          <span class="card-label">Tests</span>
+          <strong class="status-ok">OK</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="technologies" aria-labelledby="tech-title">
+      <h2 id="tech-title">Tecnologias</h2>
+      <div class="badges">
+        <span class="badge">Jenkins</span>
+        <span class="badge">AWS S3</span>
+        <span class="badge">LocalStack</span>
+        <span class="badge">Docker</span>
+        <span class="badge">HTML/CSS/JS</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Hecho con ❤️ en el curso de Jenkins
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

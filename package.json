@@ -1,0 +1,12 @@
+{
+  "name": "mi-sitio-web",
+  "version": "1.0.0",
+  "description": "Sitio web estatico para practicar deploy con Jenkins y S3",
+  "main": "app.js",
+  "scripts": {
+    "test": "jest --verbose"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
