@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
-        S3_BUCKET = 'lab-clase17-mi-app'
-        ARTIFACT_NAME = "mi-app-${BUILD_NUMBER}.tar.gz"
+        S3_BUCKET = 'mi-sitio-jenkins-me-walterfontoura82'
+        WEBSITE_URL = "http://${S3_BUCKET}.s3-website-${AWS_DEFAULT_REGION}.amazonaws.com"
     }
 
     stages {
@@ -17,7 +17,7 @@ pipeline {
             }
             steps {
                 echo 'Instalando dependencias'
-                sh 'npm ci || npm install'
+                sh 'npm ci'
                 echo 'Dependencias instaladas'
             }
         }
@@ -36,14 +36,7 @@ pipeline {
             }
         }
 
-        stage('Empaquetar aplicacion') {
-            steps {
-                sh 'tar --exclude=node_modules --exclude=.git --exclude="$ARTIFACT_NAME" -czf "$ARTIFACT_NAME" .'
-                archiveArtifacts artifacts: env.ARTIFACT_NAME, fingerprint: true
-            }
-        }
-
-        stage('Crear bucket y subir a S3') {
+        stage('Crear bucket S3') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -67,8 +60,75 @@ pipeline {
                                     --create-bucket-configuration LocationConstraint="$AWS_DEFAULT_REGION"
                             fi
                         fi
+                    '''
+                }
+            }
+        }
 
-                        aws s3 cp "$ARTIFACT_NAME" "s3://$S3_BUCKET/builds/$ARTIFACT_NAME"
+        stage('Configurar sitio web S3') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-credentials',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh '''
+                        set -e
+
+                        aws s3api put-public-access-block \
+                            --bucket "$S3_BUCKET" \
+                            --public-access-block-configuration \
+                            BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+
+                        aws s3 website "s3://$S3_BUCKET" \
+                            --index-document index.html \
+                            --error-document index.html
+
+                        cat > bucket-policy.json <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadGetObject",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::$S3_BUCKET/*"
+    }
+  ]
+}
+EOF
+
+                        aws s3api put-bucket-policy \
+                            --bucket "$S3_BUCKET" \
+                            --policy file://bucket-policy.json
+                    '''
+                }
+            }
+        }
+
+        stage('Desplegar archivos estaticos') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-credentials',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    sh '''
+                        set -e
+
+                        aws s3 sync . "s3://$S3_BUCKET" \
+                            --exclude ".git/*" \
+                            --exclude "node_modules/*" \
+                            --exclude "tests/*" \
+                            --exclude "package*.json" \
+                            --exclude "Jenkinsfile" \
+                            --exclude "bucket-policy.json" \
+                            --delete
                     '''
                 }
             }
@@ -77,7 +137,8 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline ejecutado con exito'
+            echo "Pipeline ejecutado con exito"
+            echo "Sitio disponible en: ${WEBSITE_URL}"
         }
         failure {
             echo 'Pipeline fallido'
